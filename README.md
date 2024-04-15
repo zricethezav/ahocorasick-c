@@ -1,6 +1,6 @@
 # Aho-Corasick Library
 
-C implementation of the [Aho-Corasick algorithm](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm) for efficient string matching. It allows you to search for multiple patterns simultaneously in a given text. 
+C implementation of the [Aho-Corasick algorithm](https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm) for efficient string matching. It allows you to search for multiple patterns simultaneously in a given text.
 
 
 ### Example:
@@ -17,7 +17,7 @@ int main()
         (unsigned char *)"hers"};
 
     int numWords = sizeof(dictionary) / sizeof(dictionary[0]);
-    node *root = ahocorasick_create_trie(dictionary, numWords);
+    ac_node *root = ahocorasick_create_trie(dictionary, numWords);
 
     unsigned char *text = (unsigned char *)"she looked at this example";
 

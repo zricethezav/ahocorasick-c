@@ -1,8 +1,11 @@
 #include "ahocorasick.h"
+#include "stdlib.h"
+#include "unistd.h"
+#include "stdio.h"
 
-node *ahocorasick_create_node()
+ac_node *ahocorasick_create_node()
 {
-    node *new_node = (node *)malloc(sizeof(node));
+    ac_node *new_node = (ac_node *)malloc(sizeof(ac_node));
     if (new_node == NULL)
     {
         return NULL;
@@ -10,7 +13,6 @@ node *ahocorasick_create_node()
     new_node->root = 0;
     new_node->end_of_word = 0;
     new_node->index = -1;
-    new_node->b = NULL;
     new_node->failure = NULL;
     for (int i = 0; i < MAX_CHARS; i++)
     {
@@ -19,9 +21,9 @@ node *ahocorasick_create_node()
     return new_node;
 }
 
-void ahocorasick_insert(node *root, const unsigned char *word, const int index)
+void ahocorasick_insert(ac_node *root, const unsigned char *word, const int index)
 {
-    node *current = root;
+    ac_node *current = root;
     for (int i = 0; word[i] != '\0'; i++)
     {
         if (current->child[word[i]] == NULL)
@@ -34,25 +36,29 @@ void ahocorasick_insert(node *root, const unsigned char *word, const int index)
     current->index = index;
 }
 
-void ahocorasick_build_failure_links(node *root, int max_word_length)
+void ahocorasick_build_failure_links(ac_node *root)
 {
-    node **queue = (node **)malloc(max_word_length * sizeof(node *));
+    int queue_capacity = 10; // Initial queue capacity
+    int queue_size = 0;
+    ac_node **queue = (ac_node **)malloc(queue_capacity * sizeof(ac_node *));
     int front = 0, rear = 0;
 
     queue[rear++] = root;
+    queue_size++;
+
     while (front < rear)
     {
-        node *current = queue[front++];
+        ac_node *current = queue[front++];
         for (int i = 0; i < MAX_CHARS; i++)
         {
-            node *child = current->child[i];
+            ac_node *child = current->child[i];
             if (child && current == root)
             {
                 child->failure = root;
             }
             else if (child)
             {
-                node *failure = current->failure;
+                ac_node *failure = current->failure;
                 while (failure && !failure->child[i])
                 {
                     failure = failure->failure;
@@ -62,18 +68,27 @@ void ahocorasick_build_failure_links(node *root, int max_word_length)
 
             if (child)
             {
+                if (queue_size == queue_capacity)
+                {
+                    queue_capacity *= 2;
+                    queue = (ac_node **)realloc(queue, queue_capacity * sizeof(ac_node *));
+                }
                 queue[rear++] = child;
+                queue_size++;
             }
         }
     }
     free(queue);
 }
 
-int ahocorasick_find_matches(node *root, const unsigned char *text, int *matchIndices)
+int ahocorasick_find_matches(ac_node *root, const unsigned char *text, int **matchIndices)
 {
-    node *current = root;
+    ac_node *current = root;
     int len = strlen((char *)text);
+    int matchIndicesCapacity = 10; // Initial capacity
     int numMatches = 0;
+    *matchIndices = (int *)malloc(matchIndicesCapacity * sizeof(int));
+
     for (int i = 0; i < len; i++)
     {
         while (current && !current->child[text[i]])
@@ -81,17 +96,23 @@ int ahocorasick_find_matches(node *root, const unsigned char *text, int *matchIn
             current = current->failure;
         }
         current = current ? current->child[text[i]] : root;
-        node *temp = current;
+        ac_node *temp = current;
         while (temp && temp->end_of_word)
         {
-            matchIndices[(numMatches)++] = temp->index;
+            if (numMatches == matchIndicesCapacity)
+            {
+                matchIndicesCapacity *= 2;
+                *matchIndices = (int *)realloc(*matchIndices, matchIndicesCapacity * sizeof(int));
+            }
+            (*matchIndices)[numMatches++] = temp->index;
             temp = temp->failure;
         }
     }
+
     return numMatches;
 }
 
-void ahocorasick_free_trei(node *current)
+void ahocorasick_free_trei(ac_node *current)
 {
     if (current == NULL)
     {
@@ -99,14 +120,18 @@ void ahocorasick_free_trei(node *current)
     }
     for (int i = 0; i < MAX_CHARS; i++)
     {
-        ahocorasick_free_trei(current->child[i]);
+        if (current->child[i] != NULL)
+        {
+            ahocorasick_free_trei(current->child[i]);
+        }
     }
+
     free(current);
 }
 
-node *ahocorasick_create_trie(const unsigned char **dictionary, int numWords)
+ac_node *ahocorasick_create_trie(const unsigned char **dictionary, int numWords)
 {
-    node *root_node = ahocorasick_create_node();
+    ac_node *root_node = ahocorasick_create_node();
     if (root_node == NULL)
     {
         return NULL;
@@ -123,7 +148,7 @@ node *ahocorasick_create_trie(const unsigned char **dictionary, int numWords)
         ahocorasick_insert(root_node, dictionary[i], i);
     }
 
-    ahocorasick_build_failure_links(root_node, max_word_length);
+    ahocorasick_build_failure_links(root_node);
 
     return root_node;
 }

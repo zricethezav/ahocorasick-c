@@ -6,7 +6,7 @@
 
 #define MAX_CHARS 256
 
-typedef struct node
+typedef struct ac_node
 {
     // root is 1 if this node is the root of the trie, 0 otherwise
     u_int8_t root;
@@ -20,11 +20,11 @@ typedef struct node
     int index;
 
     // Array of child nodes, indexed by the byte value
-    struct node *child[MAX_CHARS];
+    struct ac_node *child[MAX_CHARS];
 
     // Pointer to the next node which is in the dictionary that can be reached from here following suffixes
-    struct node *failure;
-} node;
+    struct ac_node *failure;
+} ac_node;
 
 /**
  * Create a new node and return a pointer to it.
@@ -32,7 +32,7 @@ typedef struct node
  *
  * @return A pointer to the newly created node, or NULL if memory allocation fails.
  */
-node *ahocorasick_create_node();
+ac_node *ahocorasick_create_node();
 
 /**
  * Insert a word into the trie.
@@ -41,7 +41,7 @@ node *ahocorasick_create_node();
  * @param word The word to insert.
  * @param index The index of the word in the dictionary.
  */
-void ahocorasick_insert(node *root, const unsigned char *word, const int index);
+void ahocorasick_insert(ac_node *root, const unsigned char *word, const int index);
 
 /**
  * Build the failure links in the trie using a BFS traversal.
@@ -49,7 +49,7 @@ void ahocorasick_insert(node *root, const unsigned char *word, const int index);
  * @param root The root of the trie.
  * @param max_word_length The maximum length of a word in the dictionary.
  */
-void ahocorasick_build_failure_links(node *root, int max_word_length);
+void ahocorasick_build_failure_links(ac_node *root);
 
 /**
  * Find all the words in the dictionary that are present in the text.
@@ -59,14 +59,14 @@ void ahocorasick_build_failure_links(node *root, int max_word_length);
  * @param matchIndices An array to store the indices of the words that are found.
  * @return number of matches found.
  */
-int ahocorasick_find_matches(node *root, const unsigned char *text, int *matchIndices);
+int ahocorasick_find_matches(ac_node *root, const unsigned char *text, int **matchIndices);
 
 /**
  * Free the memory allocated for the trie.
  *
  * @param current The current node to free.
  */
-void ahocorasick_free_trei(node *current);
+void ahocorasick_free_trei(ac_node *current);
 
 /**
  * Create a trie from the dictionary.
@@ -75,6 +75,6 @@ void ahocorasick_free_trei(node *current);
  * @param numWords The number of words in the dictionary.
  * @return The root node of the created trie, or NULL if memory allocation fails.
  */
-node *ahocorasick_create_trie(const unsigned char **dictionary, int numWords);
+ac_node *ahocorasick_create_trie(const unsigned char **dictionary, int numWords);
 
 #endif // AHOCORASICK_H
